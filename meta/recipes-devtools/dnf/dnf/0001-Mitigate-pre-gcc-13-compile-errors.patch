@@ -1,0 +1,85 @@
+From 884fd2f9d4de97c66919dac4e833d7ccce4e1adf Mon Sep 17 00:00:00 2001
+From: Niko Mauno <niko.mauno@vaisala.com>
+Date: Wed, 2 Jul 2025 09:25:13 +0000
+Subject: [PATCH] Mitigate pre-gcc-13 compile errors
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ /build/nm/upstream/build/tmp/work/x86_64-linux/dnf-native/5.2.14.0/sources/dnf-5.2.14.0/libdnf5/base/goal_elements.cpp:188:10: error: ‘optional’ in namespace ‘std’ does not name a template type
+  188 |     std::optional<libdnf5::comps::PackageType> used_group_package_types{std::nullopt};
+      |          ^~~~~~~~
+
+/build/nm/upstream/build/tmp/work/x86_64-linux/dnf-native/5.2.14.0/sources/dnf-5.2.14.0/libdnf5/conf/config_main.cpp:100:17: error: ‘format’ is not a member of ‘std’
+  100 |     return std::format(
+      |                 ^~~~~~
+
+/build/nm/upstream/build/tmp/work/x86_64-linux/dnf-native/5.2.14.0/sources/dnf-5.2.14.0/libdnf5/logger/memory_buffer_logger.cpp:40:10: error: ‘vector’ in namespace ‘std’ does not name a template type
+   40 |     std::vector<Item> items;
+      |          ^~~~~~
+
+Signed-off-by: Niko Mauno <niko.mauno@vaisala.com>
+
+Upstream-Status: Inappropriate [OE-Specific]
+
+---
+ libdnf5/base/goal_elements.cpp          |  2 ++
+ libdnf5/conf/config_main.cpp            | 16 +---------------
+ libdnf5/logger/memory_buffer_logger.cpp |  1 +
+ 3 files changed, 4 insertions(+), 15 deletions(-)
+
+diff --git a/libdnf5/base/goal_elements.cpp b/libdnf5/base/goal_elements.cpp
+index c59c5257..238fe26c 100644
+--- a/libdnf5/base/goal_elements.cpp
++++ b/libdnf5/base/goal_elements.cpp
+@@ -23,6 +23,8 @@ along with libdnf.  If not, see <https://www.gnu.org/licenses/>.
+ #include "libdnf5/common/exception.hpp"
+ #include "libdnf5/utils/bgettext/bgettext-lib.h"
+ 
++#include <optional>
++
+ namespace libdnf5 {
+ 
+ class ResolveSpecSettings::Impl {
+diff --git a/libdnf5/conf/config_main.cpp b/libdnf5/conf/config_main.cpp
+index a8047911..957c3712 100644
+--- a/libdnf5/conf/config_main.cpp
++++ b/libdnf5/conf/config_main.cpp
+@@ -89,21 +89,7 @@ static int str_to_bytes(const std::string & str) {
+ }
+ 
+ static std::string get_user_agent() {
+-    utils::OSRelease os_release;
+-    auto os = utils::get_os();
+-    auto base_arch = rpm::get_base_arch(utils::detect_arch());
+-
+-    if (!(os_release.contains("NAME") && os_release.contains("VERSION_ID") && !os.empty() && !base_arch.empty())) {
+-        return "libdnf";
+-    }
+-
+-    return std::format(
+-        "libdnf ({} {}; {}; {}.{})",
+-        os_release.get_value("NAME"),
+-        os_release.get_value("VERSION_ID"),
+-        os_release.get_value("VARIANT_ID", "generic"),
+-        os,
+-        base_arch);
++    return "libdnf";
+ }
+ 
+ class ConfigMain::Impl {
+diff --git a/libdnf5/logger/memory_buffer_logger.cpp b/libdnf5/logger/memory_buffer_logger.cpp
+index 1433b26c..69169e01 100644
+--- a/libdnf5/logger/memory_buffer_logger.cpp
++++ b/libdnf5/logger/memory_buffer_logger.cpp
+@@ -20,6 +20,7 @@ along with libdnf.  If not, see <https://www.gnu.org/licenses/>.
+ #include "libdnf5/logger/memory_buffer_logger.hpp"
+ 
+ #include <mutex>
++#include <vector>
+ 
+ namespace libdnf5 {
+ 
+-- 
+2.39.5
+
